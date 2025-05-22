@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mvcp"
+version = "0.1.0"
+description = "Model Version Control Protocol - Git-compatible version control for AI agent workflows"
+readme = "README.md"
+authors = [
+    {name = "MVCP Team", email = "mvcp@example.com"},
+]
+requires-python = ">=3.8"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Software Development :: Version Control",
+]
+dependencies = [
+    "click",
+    "colorama",
+    "pyyaml",
+]
+
+[project.scripts]
+mvcp = "mvcp.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/evangelosmeklis/mvcp"
+"Bug Tracker" = "https://github.com/evangelosmeklis/mvcp/issues" 
