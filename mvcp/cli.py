@@ -7,6 +7,7 @@ import click
 from typing import List, Optional
 
 from mvcp.core import save, restore, diff, list_checkpoints
+from mvcp.server import run_server
 
 
 @click.group()
@@ -69,6 +70,19 @@ def diff_cmd(checkpoint1: str, checkpoint2: str):
     try:
         diff_output = diff(checkpoint1=checkpoint1, checkpoint2=checkpoint2)
         click.echo(diff_output)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command(name="serve")
+@click.option("--host", default="0.0.0.0", help="Host to bind the server to")
+@click.option("--port", default=8000, type=int, help="Port to bind the server to")
+def serve_cmd(host: str, port: int):
+    """Start the MVCP API server for AI agent access."""
+    click.echo(f"Starting MVCP API server at http://{host}:{port}")
+    try:
+        run_server(host=host, port=port)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)

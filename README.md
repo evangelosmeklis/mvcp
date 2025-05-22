@@ -44,6 +44,12 @@ mvcp restore mvcp/refactorer/step3@20240522T0932
 mvcp diff mvcp/agentA/step2 mvcp/agentA/step3
 ```
 
+### Start the API server for AI agents
+
+```bash
+mvcp serve --host 0.0.0.0 --port 8000
+```
+
 ## 🧠 Protocol Conventions
 
 ### Tag Format
@@ -77,17 +83,118 @@ checkpoint(mvcp): <agent> step <step> - <desc>
 
 ## 🧩 Agent Integration
 
+### CLI Integration
+
 Agents can invoke MVCP as a CLI subprocess:
 
 ```python
 subprocess.run(["mvcp", "save", "--agent", "planner", "--step", "5"])
 ```
 
+### Python Library Integration
+
 Or import it as a module:
 
 ```python
 from mvcp import save
 save(agent="planner", step=5, description="generated plan scorer")
+```
+
+### HTTP API Integration (MCP-Compatible)
+
+MVCP provides an HTTP API server for AI agents to call as a tool:
+
+```bash
+# Start the server
+mvcp serve --host 0.0.0.0 --port 8000
+```
+
+The API server exposes endpoints for all MVCP operations:
+
+- `GET /schema` - Get the tool schema in MCP-compatible format
+- `POST /tool/mvcp` - Call the MVCP tool with the provided parameters
+- `POST /save` - Save a checkpoint
+- `POST /list` - List checkpoints
+- `POST /restore` - Restore to a checkpoint
+- `POST /diff` - Show diff between checkpoints
+
+### MCP-Compatible Tool Schema
+
+The MVCP tool provides a Model Context Protocol (MCP) compatible schema:
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "mvcp",
+    "description": "Model Version Control Protocol for saving, restoring, and comparing checkpoints during code transformations",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["save", "list", "restore", "diff"],
+          "description": "The action to perform"
+        },
+        "agent": {
+          "type": "string",
+          "description": "Name of the agent"
+        },
+        "step": {
+          "type": "integer",
+          "description": "Step number in the agent's workflow"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the changes"
+        },
+        "tools_used": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of tools used by the agent"
+        },
+        "checkpoint": {
+          "type": "string",
+          "description": "Checkpoint tag to restore to"
+        },
+        "checkpoint1": {
+          "type": "string",
+          "description": "First checkpoint for comparison"
+        },
+        "checkpoint2": {
+          "type": "string",
+          "description": "Second checkpoint for comparison"
+        }
+      },
+      "required": ["action"]
+    }
+  }
+}
+```
+
+### Example API Usage
+
+```python
+import requests
+
+# Get the tool schema
+response = requests.get("http://localhost:8000/schema")
+schema = response.json()
+
+# Call the tool to save a checkpoint
+tool_call = {
+    "name": "mvcp",
+    "arguments": {
+        "action": "save",
+        "agent": "coding_assistant",
+        "step": 1,
+        "description": "Initial code generation",
+        "tools_used": ["code_generator", "linter"]
+    }
+}
+response = requests.post("http://localhost:8000/tool/mvcp", json=tool_call)
+result = response.json()
+print(f"Checkpoint created: {result['tag']}")
 ```
 
 ## 🔧 Contributing
