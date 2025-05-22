@@ -12,6 +12,11 @@ A lightweight, Git-compatible version control protocol designed specifically for
 pip install mvcp
 ```
 
+MVCP requires Git to be installed on your system. The library automatically handles:
+- Git repository initialization (if needed)
+- Git user configuration (if not already set up)
+- Creating necessary directory structures for metadata
+
 ## 🚀 Quick Start
 
 ### Save a checkpoint

@@ -59,6 +59,27 @@ class DiffParams(BaseModel):
     checkpoint2: str = Field(description="Second checkpoint for comparison")
 
 
+def _get_model_data(model: BaseModel) -> Dict[str, Any]:
+    """
+    Extract data from a Pydantic model in a way that works with both v1 and v2.
+    
+    In Pydantic v1, the method is .dict()
+    In Pydantic v2, the method is .model_dump()
+    
+    This function tries both methods and falls back as needed.
+    """
+    # First try model_dump (Pydantic v2)
+    try:
+        return model.model_dump(exclude_none=True)
+    except AttributeError:
+        # Fall back to dict (Pydantic v1)
+        try:
+            return model.dict(exclude_none=True)
+        except AttributeError:
+            # Last resort - convert to dict using __dict__
+            return {k: v for k, v in model.__dict__.items() if v is not None}
+
+
 @app.get("/")
 async def root():
     """Root endpoint that provides basic information about the API."""
@@ -96,7 +117,7 @@ async def call_tool(request: ToolCallRequest):
 @app.post("/save")
 async def save_checkpoint(params: SaveParams):
     """Save a checkpoint with the current state."""
-    result = handle_tool_call(params.dict(exclude_none=True))
+    result = handle_tool_call(_get_model_data(params))
     
     if "error" in result and not result.get("success", False):
         raise HTTPException(status_code=400, detail=result["error"])
@@ -107,7 +128,7 @@ async def save_checkpoint(params: SaveParams):
 @app.post("/list")
 async def list_checkpoints_endpoint(params: ListParams):
     """List all checkpoints, optionally filtered by agent and step."""
-    result = handle_tool_call(params.dict(exclude_none=True))
+    result = handle_tool_call(_get_model_data(params))
     
     if "error" in result and not result.get("success", False):
         raise HTTPException(status_code=400, detail=result["error"])
@@ -118,7 +139,7 @@ async def list_checkpoints_endpoint(params: ListParams):
 @app.post("/restore")
 async def restore_checkpoint(params: RestoreParams):
     """Restore to a specific checkpoint."""
-    result = handle_tool_call(params.dict(exclude_none=True))
+    result = handle_tool_call(_get_model_data(params))
     
     if "error" in result and not result.get("success", False):
         raise HTTPException(status_code=400, detail=result["error"])
@@ -129,7 +150,7 @@ async def restore_checkpoint(params: RestoreParams):
 @app.post("/diff")
 async def diff_checkpoints(params: DiffParams):
     """Show diff between two checkpoints."""
-    result = handle_tool_call(params.dict(exclude_none=True))
+    result = handle_tool_call(_get_model_data(params))
     
     if "error" in result and not result.get("success", False):
         raise HTTPException(status_code=400, detail=result["error"])

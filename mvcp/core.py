@@ -19,6 +19,58 @@ META_DIR = ".agent-meta"
 TAG_PREFIX = "mvcp"
 
 
+def _ensure_git_setup() -> None:
+    """
+    Ensure Git is initialized and configured properly.
+    
+    This function checks if:
+    1. Git is installed
+    2. We're in a Git repository (or initializes one)
+    3. Git user is configured (or configures a default one)
+    """
+    # Check if git is installed
+    try:
+        subprocess.run(["git", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except (subprocess.SubprocessError, FileNotFoundError):
+        raise RuntimeError("Git is not installed or not available in PATH. Please install Git to use MVCP.")
+    
+    # Check if we're in a git repository
+    ret_code, _, _ = _run_git_command(["rev-parse", "--is-inside-work-tree"])
+    if ret_code != 0:
+        # Initialize git repository
+        logger.info("Initializing Git repository for MVCP")
+        ret_code, _, stderr = _run_git_command(["init"])
+        if ret_code != 0:
+            raise RuntimeError(f"Failed to initialize Git repository: {stderr}")
+    
+    # Check if user.name and user.email are set
+    _, name, _ = _run_git_command(["config", "user.name"])
+    _, email, _ = _run_git_command(["config", "user.email"])
+    
+    if not name.strip():
+        logger.info("Setting default Git user.name for MVCP")
+        _run_git_command(["config", "user.name", "MVCP Agent"])
+    
+    if not email.strip():
+        logger.info("Setting default Git user.email for MVCP")
+        _run_git_command(["config", "user.email", "mvcp-agent@example.com"])
+
+
+def _ensure_directories_exist(agent: str) -> None:
+    """
+    Ensure all required directories exist.
+    
+    Args:
+        agent: The name of the agent to create directories for
+    """
+    # Create the base metadata directory
+    os.makedirs(META_DIR, exist_ok=True)
+    
+    # Create the agent-specific directories
+    agent_dir = os.path.join(META_DIR, TAG_PREFIX, agent)
+    os.makedirs(agent_dir, exist_ok=True)
+
+
 def _run_git_command(cmd: List[str]) -> Tuple[int, str, str]:
     """Run a git command and return exit code, stdout, and stderr."""
     process = subprocess.Popen(
@@ -93,8 +145,9 @@ def save(agent: str, step: int, description: str = "", tools_used: Optional[List
     Returns:
         The created tag name
     """
-    # Ensure meta directory exists
-    os.makedirs(META_DIR, exist_ok=True)
+    # Ensure everything is set up properly
+    _ensure_git_setup()
+    _ensure_directories_exist(agent)
     
     # Stage all changes
     returncode, stdout, stderr = _run_git_command(["add", "--all"])
@@ -113,8 +166,16 @@ def save(agent: str, step: int, description: str = "", tools_used: Optional[List
     # Create commit message
     commit_message = f"checkpoint(mvcp): {agent} step {step} - {description}"
     
-    # Create commit
-    returncode, stdout, stderr = _run_git_command(["commit", "-m", commit_message])
+    # Check if there are actual changes to commit
+    returncode, stdout, stderr = _run_git_command(["diff", "--cached", "--quiet"])
+    
+    # returncode 0 means no changes, 1 means there are changes
+    if returncode == 0:
+        logger.warning("No changes to commit. Creating an empty commit.")
+        returncode, stdout, stderr = _run_git_command(["commit", "--allow-empty", "-m", commit_message])
+    else:
+        returncode, stdout, stderr = _run_git_command(["commit", "-m", commit_message])
+    
     if returncode != 0:
         raise RuntimeError(f"Failed to create commit: {stderr}")
     
@@ -132,6 +193,9 @@ def save(agent: str, step: int, description: str = "", tools_used: Optional[List
         "parent_checkpoint": parent_checkpoint,
         "tools_used": tools_used or []
     }
+    
+    # Ensure parent directory exists for the metadata file
+    os.makedirs(os.path.dirname(os.path.join(META_DIR, tag)), exist_ok=True)
     
     # Write metadata to file
     meta_path = os.path.join(META_DIR, f"{tag}.json")
@@ -153,6 +217,9 @@ def list_checkpoints(agent: Optional[str] = None, step: Optional[int] = None) ->
     Returns:
         List of matching tags
     """
+    # Ensure git is set up
+    _ensure_git_setup()
+    
     # Get all tags
     returncode, stdout, stderr = _run_git_command(["tag", "-l", f"{TAG_PREFIX}/*"])
     if returncode != 0:
@@ -186,6 +253,9 @@ def restore(checkpoint: str) -> None:
     Args:
         checkpoint: The tag to restore to
     """
+    # Ensure git is set up
+    _ensure_git_setup()
+    
     # Validate tag format
     try:
         _parse_tag(checkpoint)
@@ -216,6 +286,9 @@ def diff(checkpoint1: str, checkpoint2: str) -> str:
     Returns:
         Git diff output
     """
+    # Ensure git is set up
+    _ensure_git_setup()
+    
     # Validate tag formats
     try:
         _parse_tag(checkpoint1)
