@@ -12,7 +12,7 @@ MVCP should also server as a tool which multiple agents will use when they work 
 ## 📦 Installation
 
 ```bash
-pip install mvcp
+pip install mvcp (not yet on pip, will be soon)
 ```
 
 MVCP requires Git to be installed on your system. The library automatically handles:
