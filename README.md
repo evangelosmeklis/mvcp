@@ -6,6 +6,9 @@ A lightweight, Git-compatible version control protocol designed specifically for
 
 **MVCP** introduces a unified and human-readable system for agent iteration tracking, enabling rollback, auditing, and collaboration. It serves as a thin layer on top of Git, making it perfect for AI agent workflows.
 
+# TODO:
+MVCP should also server as a tool which multiple agents will use when they work towards a common goal like building a repo autonomously
+
 ## 📦 Installation
 
 ```bash
