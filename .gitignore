@@ -35,3 +35,4 @@ venv.bak/
 *.swo 
 
 *prd.md
+.agent-meta/
