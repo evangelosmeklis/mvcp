@@ -217,6 +217,7 @@ Here's how you can contribute:
 
 All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## 📌 License
 
-MIT 
+## 📜 License
+
+Distributed under the MIT license. See the [LICENSE](LICENSE) file for more details.
