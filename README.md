@@ -204,7 +204,15 @@ print(f"Checkpoint created: {result['tag']}")
 
 ## 🔧 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions from the community! Please check out our [Contributing Guidelines](CONTRIBUTING.md) to get started.
+
+Here's how you can contribute:
+- Report bugs and request features by creating [issues](https://github.com/evangelosmeklis/mvcp/issues)
+- Submit pull requests for bug fixes or new features
+- Improve documentation
+- Share ideas and feedback
+
+All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 📌 License
 
